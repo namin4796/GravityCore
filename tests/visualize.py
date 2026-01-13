@@ -15,23 +15,23 @@ except ImportError:
     sys.exit(1)
 
 # -- config --
-N = 1000 #Number of stars
-STEPS_PER_FRAME = 20 # how many physics steps to take
+N = 300 #Number of stars
+STEPS_PER_FRAME = 2 # how many physics steps to take
 
 # initialize universe
 sim = gravity_core.Universe(N)
 
 # create a galaxy using polar co-ordinates
 angle = [random.uniform(0, 6.28) for _ in range(N)]
-radius = [random.uniform(10, 100) for _ in range(N)]
+radius = [random.uniform(10, 150) for _ in range(N)]
 
 x = [r * np.cos(a) for r, a in zip(radius, angle)]
 y = [r * np.sin(a) for r, a in zip(radius, angle)]
-mass = [random.uniform(1.0, 5.0) for _ in range(N)]
+mass = [random.uniform(0.7, 1.0) for _ in range(N)]
 
 # add a SMB in the centre
 x[0], y[0] = 0, 0
-mass[0] = 50000.0
+mass[0] = 1000.0
 
 # initial velocity
 vx = []
@@ -43,9 +43,12 @@ for i in range(N):
         vy.append(0)
         continue
 
-    v_orbit = np.sqrt(1.0 * mass[0] / r) * 0.7
+    v_orbit = np.sqrt(1.0 * mass[0] / r)
 
-    # perpendicular vel. to radius
+    # small noise to v
+    v_orbit *= random.uniform(0.99, 1.01)
+
+    # perpendicular vel. to radius (tangential vel.)
     vx.append(-v_orbit * np.sin(angle[i]))
     vy.append(v_orbit * np.cos(angle[i]))
 
@@ -55,13 +58,13 @@ sim.set_state(x, y, vx, vy, mass)
 # -- visualization loop --
 fig, ax = plt.subplots(figsize=(8, 8))
 ax.set_facecolor('black')
-ax.set_xlim(-150, 150)
-ax.set_ylim(-150, 150)
+ax.set_xlim(-250, 250)
+ax.set_ylim(-250, 250)
 
 # scatter plot for stars
-particles = ax.scatter([], [], c='white', s=2, alpha=0.8)
+particles = ax.scatter([], [], c='white', s=0.5, alpha=0.8)
 # the SMB
-center = ax.scatter([], [], c='red', s=5)
+center = ax.scatter([], [], c='red', s=10)
 
 def update(frame):
     # run c++ physics
@@ -73,10 +76,6 @@ def update(frame):
     new_x = np.array(sim.get_x())
     new_y = np.array(sim.get_y())
 
-    # print first particle's position
-    # if it prints same number every time, the c++ is frozen.
-    if frame % 10 == 0:
-        print(f"Frame {frame}: Particle 1 is at ({new_x[1]:.2f}, {new_y[1]:.2f})")
 
     # update plot
     data = np.c_[new_x, new_y]
@@ -85,5 +84,8 @@ def update(frame):
     return particles, center
 
 print("Starting Animation... Close window to exit.")
-ani = FuncAnimation(fig, update, frames=200, interval=20, blit=False)
+ani = FuncAnimation(fig, update, frames=200, interval=20, blit=True)
+plt.title("Galaxy Simulation")
+plt.xlabel("R / kpc")
+plt.ylabel("R / kpc")
 plt.show()

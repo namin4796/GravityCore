@@ -8,9 +8,43 @@ namespace py = pybind11;
 class Universe {
     std::vector<double> px, py; // positions
     std::vector<double> vx, vy; // velocities
+    std::vector<double> ax, ay; // acceleration
     std::vector<double> mass; // masses
     const double G = 1.0;//6.67430e-11;
     double dt = 0.005;
+
+    private:
+       void compute_forces() {
+           size_t n = px.size();
+
+           std::fill(ax.begin(), ax.end(), 0.0);
+           std::fill(ay.begin(), ay.end(), 0.0);
+
+           #pragma omp parallel for
+           for (size_t i = 0; i < n; i++) {
+               double fx = 0.0;
+               double fy = 0.0;
+
+               for (size_t j = 0; j < n; j++) {
+                   if (i == j)
+                       continue;
+
+                   double dx = px[j] - px[i];
+                   double dy = py[j] - py[i];
+                   double softening_sq = 0.04;
+                   double dist_sq = dx*dx + dy*dy + softening_sq;
+                   double dist = std::sqrt(dist_sq);
+
+                   double f = (G * mass[i] * mass[j]) / dist_sq;
+
+                   fx += f * (dx / dist);
+                   fy += f * (dy / dist);
+               }
+
+               ax[i] = fx / mass[i];
+               ay[i] = fy / mass[i];
+           }
+       }
 
     public:
         Universe(int n_particles) {
@@ -18,6 +52,8 @@ class Universe {
             px.resize(n_particles, 0.0);
             vx.resize(n_particles, 0.0);
             vx.resize(n_particles, 0.0);
+            ax.resize(n_particles, 0.0);
+            ay.resize(n_particles, 0.0);
             mass.resize(n_particles, 1.0);
         }
 
@@ -38,9 +74,13 @@ class Universe {
 
             //resize velocities
             vx.resize(px.size(), 0.0);
-            vy.resize(px.size(), 0.0);
+            vy.resize(py.size(), 0.0);
 
+            ax.resize(px.size(), 0.0);
+            ay.resize(py.size(), 0.0);
             //vx.assign(px.size(), 0.1);
+            //
+            compute_forces();
         }
 
         // Get back data from Python for plotting
@@ -51,39 +91,24 @@ class Universe {
        void step() {
            size_t n = px.size();
 
-           //calculate forces / update velocities
-           #pragma omp parallel for
-           for (size_t i = 0; i < n; i++) {
-               double fx = 0.0;
-               double fy = 0.0;
-
-               for (size_t j = 0; j < n; j++) {
-                   if (i == j)
-                       continue;
-
-                   double dx = px[j] - px[i];
-                   double dy = py[j] - py[i];
-                   double dist_sq = dx*dx + dy*dy + 1e-9; // +epsilon to avoid div by 0
-                   double dist = std::sqrt(dist_sq);
-
-                   // grav for F = G*(m1*m2)/r2
-                   double f = (G * mass[i] * mass[j]) / dist_sq;
-
-                   fx += f * (dx / dist);
-                   fy += f * (dy / dist);
-               }
+           // start loop at 1 to pin black hole (index 0)
+           for (size_t i = 1; i < n; i++) {
+                px[i] += vx[i] * dt + 0.5 * ax[i] * dt * dt;         
+                py[i] += vy[i] * dt + 0.5 * ay[i] * dt * dt;         
 
                //F = ma -> a = F/m
-               vx[i] += (fx / mass[i]) * dt;
-               vy[i] += (fy / mass[i]) * dt;
+               vx[i] += 0.5 * ax[i] * dt;
+               vy[i] += 0.5 * ay[i] * dt;
            }
 
-           // update positions
-           for (size_t i = 0; i < n; i++) {
-               px[i] += vx[i] * dt;
-               py[i] += vy[i] * dt;
+           compute_forces();
+           // final kick
+           for (size_t i = 1; i < n; i++) {
+               vx[i] += 0.5 * ax[i] * dt;
+               vy[i] += 0.5 * ay[i] * dt;
            }
        }
+
 };
 
 //Bind it to Python
