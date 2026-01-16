@@ -5,6 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
+def get_total_mass(r, m_bh):
+    R_SCALE = 200.0
+    RHO_0 = 0.002
+
+    x = r / R_SCALE
+    m_NFW = 4.0 * np.pi * RHO_0 * (R_SCALE**3)
+    m_Halo = m_NFW * (np.log(1+x)-(x/(1+x)))
+
+    return (m_bh + m_Halo)
 # load c++ engine
 sys.path.append(os.path.join(os.path.dirname(__file__), '../build'))
 try:
@@ -15,15 +24,15 @@ except ImportError:
     sys.exit(1)
 
 # -- config --
-N = 300 #Number of stars
-STEPS_PER_FRAME = 2 # how many physics steps to take
+N = 1000 #Number of stars
+STEPS_PER_FRAME = 20 # how many physics steps to take
 
 # initialize universe
 sim = gravity_core.Universe(N)
 
 # create a galaxy using polar co-ordinates
 angle = [random.uniform(0, 6.28) for _ in range(N)]
-radius = [random.uniform(10, 150) for _ in range(N)]
+radius = [random.uniform(20, 110) for _ in range(N)]
 
 x = [r * np.cos(a) for r, a in zip(radius, angle)]
 y = [r * np.sin(a) for r, a in zip(radius, angle)]
@@ -43,7 +52,8 @@ for i in range(N):
         vy.append(0)
         continue
 
-    v_orbit = np.sqrt(1.0 * mass[0] / r)
+    m_Total = get_total_mass(r, mass[0])
+    v_orbit = np.sqrt(1.0 * m_Total / r)
 
     # small noise to v
     v_orbit *= random.uniform(0.99, 1.01)
