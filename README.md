@@ -8,8 +8,6 @@
 
 The project demonstrates the power of **Data-Oriented Design**, achieving a **~30x speedup** over pure Python implementations by optimizing memory access patterns and utilizing hardware parallelism.
 
-![Rotation Curve](https://github.com/namin4796/GravityCore/blob/main/rotation_curve.png)
-* Figure: Comparison of rotation curve of stars with and without the NFW dark matter.*
 ---
 
 ## 🚀 Key Features
