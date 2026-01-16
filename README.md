@@ -33,7 +33,7 @@ In a standard Newtonian system (Black Hole only), orbital velocity drops rapidly
 
 To replicate this, I implemented the cumulative mass distribution of the NFW profile directly into the C++ physics kernel:
 
-$$M(<r) = 4 \pi \rho_0 R_s^3 \left[ \ln\left(1 + \frac{r}{R_s}\right) - \frac{r/R_s}{1 + r/R_s} \right]$$
+$$M(\lt r) = 4 \pi \rho_0 R_s^3 \left[ \ln\left(1 + \frac{r}{R_s}\right) - \frac{r/R_s}{1 + r/R_s} \right]$$
 
 ### Validation: Rotation Curve Analysis
 I verified the C++ implementation by simulating 500 stars and comparing their velocities against the theoretical curves.
