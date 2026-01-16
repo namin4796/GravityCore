@@ -5,12 +5,16 @@
 
 namespace py = pybind11;
 
+// -- global constants -- //
+const double R_SCALE = 200.0; // Scale Radius (R_s)
+const double RHO_0 = 0.002; // central density
+const double G = 1.0; // gravitational constant                                              
+
 class Universe {
     std::vector<double> px, py; // positions
     std::vector<double> vx, vy; // velocities
     std::vector<double> ax, ay; // acceleration
     std::vector<double> mass; // masses
-    const double G = 1.0;//6.67430e-11;
     double dt = 0.005;
 
     private:
@@ -19,6 +23,29 @@ class Universe {
 
            std::fill(ax.begin(), ax.end(), 0.0);
            std::fill(ay.begin(), ay.end(), 0.0);
+
+           double M_factor = 4.0 * M_PI * RHO_0 * std::pow(R_SCALE, 3);
+
+           #pragma omp parallel for
+           for (size_t i = 0; i < n; i++) {
+               double dx = px[i];
+               double dy = py[i];
+               double r_sq = dx*dx + dy*dy;
+               double r = std::sqrt(r_sq);
+
+               if (r > 1e-5) {
+                   double x = r / R_SCALE;
+
+                   double m_NFW = M_factor * (std::log(1.0+x) - (x/(1.0+x)));
+
+                   // force calculation due to M_NFW
+                   double f_NFW = G * (m_NFW / r_sq);
+
+                   //acceleration of stars towards center
+                   ax[i] -= f_NFW * (dx/r);
+                   ay[i] -= f_NFW * (dy/r);
+               }
+           }
 
            #pragma omp parallel for
            for (size_t i = 0; i < n; i++) {
@@ -49,9 +76,9 @@ class Universe {
     public:
         Universe(int n_particles) {
             px.resize(n_particles, 0.0);
-            px.resize(n_particles, 0.0);
+            py.resize(n_particles, 0.0);
             vx.resize(n_particles, 0.0);
-            vx.resize(n_particles, 0.0);
+            vy.resize(n_particles, 0.0);
             ax.resize(n_particles, 0.0);
             ay.resize(n_particles, 0.0);
             mass.resize(n_particles, 1.0);
@@ -73,8 +100,8 @@ class Universe {
             mass = m;
 
             //resize velocities
-            vx.resize(px.size(), 0.0);
-            vy.resize(py.size(), 0.0);
+            //vx.resize(px.size(), 0.0);
+            //vy.resize(py.size(), 0.0);
 
             ax.resize(px.size(), 0.0);
             ay.resize(py.size(), 0.0);
@@ -87,6 +114,8 @@ class Universe {
         std::vector<double> get_x() { return px; }
         std::vector<double> get_y() { return py; }
                            
+        std::vector<double> get_vx() { return vx; }
+        std::vector<double> get_vy() { return vy; }
        // Grav. force calculation O(N^2) 
        void step() {
            size_t n = px.size();
@@ -120,6 +149,7 @@ PYBIND11_MODULE(gravity_core, m) {
         .def("set_state", &Universe::set_state)
         .def("get_x", &Universe::get_x)
         .def("get_y", &Universe::get_y)
+        .def("get_vx", &Universe::get_vx)
+        .def("get_vy", &Universe::get_vy)
         .def("step", &Universe::step);
 }
-
