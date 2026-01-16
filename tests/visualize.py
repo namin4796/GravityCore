@@ -1,3 +1,4 @@
+import argparse
 import sys
 import os
 import random
@@ -5,15 +6,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-def get_total_mass(r, m_bh):
-    R_SCALE = 200.0
-    RHO_0 = 0.002
+parser = argparse.ArgumentParser(description="Run N-body Simulation")
+parser.add_argument("--N_STARS", type=int, default=1000, help="Number of Stars")
+parser.add_argument("--R_SCALE", type=float, default=100.0, help="NFW Scale Radius")
+parser.add_argument("--RHO_0", type=float, default=0.001, help="Dark Matter Density")
+args = parser.parse_args()
 
+def get_total_mass(r, m_bh, R_SCALE, RHO_0):
     x = r / R_SCALE
     m_NFW = 4.0 * np.pi * RHO_0 * (R_SCALE**3)
     m_Halo = m_NFW * (np.log(1+x)-(x/(1+x)))
 
     return (m_bh + m_Halo)
+
 # load c++ engine
 sys.path.append(os.path.join(os.path.dirname(__file__), '../build'))
 try:
@@ -24,23 +29,23 @@ except ImportError:
     sys.exit(1)
 
 # -- config --
-N = 1000 #Number of stars
+N = args.N_STARS  #Number of stars
 STEPS_PER_FRAME = 20 # how many physics steps to take
 
 # initialize universe
-sim = gravity_core.Universe(N)
+sim = gravity_core.Universe(N, args.R_SCALE, args.RHO_0)
 
 # create a galaxy using polar co-ordinates
 angle = [random.uniform(0, 6.28) for _ in range(N)]
-radius = [random.uniform(20, 110) for _ in range(N)]
+radius = [random.uniform(7, 120) for _ in range(N)]
 
 x = [r * np.cos(a) for r, a in zip(radius, angle)]
 y = [r * np.sin(a) for r, a in zip(radius, angle)]
-mass = [random.uniform(0.7, 1.0) for _ in range(N)]
+mass = [random.uniform(0.01, 2) for _ in range(N)]
 
 # add a SMB in the centre
 x[0], y[0] = 0, 0
-mass[0] = 1000.0
+mass[0] = 100000.0
 
 # initial velocity
 vx = []
@@ -52,7 +57,7 @@ for i in range(N):
         vy.append(0)
         continue
 
-    m_Total = get_total_mass(r, mass[0])
+    m_Total = get_total_mass(r, mass[0], args.R_SCALE, args.RHO_0)
     v_orbit = np.sqrt(1.0 * m_Total / r)
 
     # small noise to v
@@ -94,7 +99,7 @@ def update(frame):
     return particles, center
 
 print("Starting Animation... Close window to exit.")
-ani = FuncAnimation(fig, update, frames=200, interval=20, blit=True)
+ani = FuncAnimation(fig, update, frames=400, interval=100, blit=True)
 plt.title("Galaxy Simulation")
 plt.xlabel("R / kpc")
 plt.ylabel("R / kpc")

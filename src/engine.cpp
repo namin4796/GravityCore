@@ -5,9 +5,7 @@
 
 namespace py = pybind11;
 
-// -- global constants -- //
-const double R_SCALE = 200.0; // Scale Radius (R_s)
-const double RHO_0 = 0.002; // central density
+// -- universal constant -- //
 const double G = 1.0; // gravitational constant                                              
 
 class Universe {
@@ -16,6 +14,9 @@ class Universe {
     std::vector<double> ax, ay; // acceleration
     std::vector<double> mass; // masses
     double dt = 0.005;
+
+    double R_SCALE;
+    double RHO_0;
 
     private:
        void compute_forces() {
@@ -74,7 +75,10 @@ class Universe {
        }
 
     public:
-        Universe(int n_particles) {
+        Universe(int n_particles, double rs, double rho) {
+            R_SCALE = rs;
+            RHO_0 = rho;
+
             px.resize(n_particles, 0.0);
             py.resize(n_particles, 0.0);
             vx.resize(n_particles, 0.0);
@@ -145,7 +149,7 @@ PYBIND11_MODULE(gravity_core, m) {
     m.doc() = "high-performance N-body gravity engine";
 
     py::class_<Universe>(m, "Universe")
-        .def(py::init<int>())
+        .def(py::init<int, double, double>())
         .def("set_state", &Universe::set_state)
         .def("get_x", &Universe::get_x)
         .def("get_y", &Universe::get_y)

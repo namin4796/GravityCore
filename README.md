@@ -62,3 +62,13 @@ mkdir build && cd build
 # 3. Configure and Compile
 cmake ..
 cmake --build .
+
+## Dynamic Simulation Control
+
+The engine supports run-time configuration of the **Dark Matter Halo** properties via a Bash controller script, allowing you to experiment with different galaxy structures without recompiling.
+
+### Usage
+```bash
+./runSim.sh [N_STARS ][R_SCALE] [RHO_0]
+### R_SCALE (Default: 100.0)
+### RHO_0 (Default: 0.001)
