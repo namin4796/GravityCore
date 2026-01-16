@@ -24,9 +24,25 @@ The project demonstrates the power of **Data-Oriented Design**, achieving a **~3
 * **Robust Physics:** Includes gravitational softening parameters ($\epsilon$) to prevent numerical singularities during close-range stellar collisions.
 * **N-Body Interaction:** Simulates full all-to-all gravitational forces, allowing for complex phenomena like star clustering, tidal stripping, and galaxy formation.
 
+##  Galactic Dynamics & Dark Matter
+
+The engine goes beyond simple Keplerian orbits by implementing a **Navarro-Frenk-White (NFW) Dark Matter Halo**. This allows for the simulation of realistic galaxies where invisible mass dictates the motion of outer stars.
+
+### The "Missing Mass" Problem
+In a standard Newtonian system (Black Hole only), orbital velocity drops rapidly with distance ($v \propto 1/\sqrt{r}$). Real galaxies, however, exhibit "Flat Rotation Curves," implying the existence of a massive, invisible halo.
+
+To replicate this, I implemented the cumulative mass distribution of the NFW profile directly into the C++ physics kernel:
+
+$$M(<r) = 4 \pi \rho_0 R_s^3 \left[ \ln\left(1 + \frac{r}{R_s}\right) - \frac{r/R_s}{1 + r/R_s} \right]$$
+
+### Validation: Rotation Curve Analysis
+I verified the C++ implementation by simulating 500 stars and comparing their velocities against the theoretical curves.
+
+![Rotation Curve](rotation_curve.png)
+*Figure: The Simulation (Blue Dots) perfectly hugs the theoretical Dark Matter curve (Red Line), maintaining high velocities at the galactic edge. Without this feature, stars would follow the dashed Black Line and the galaxy would disintegrate.*
 ---
 
-## 🛠️ Installation & Build
+##  Installation & Build
 
 ### Prerequisites
 * **C++ Compiler** (GCC, Clang, or MSVC) supporting C++17
