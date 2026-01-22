@@ -10,7 +10,7 @@ The project demonstrates the power of **Data-Oriented Design**, achieving a **~3
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
 ### 1. High-Performance Architecture
 * **Hybrid C++/Python:** Computationally expensive $O(N^2)$ force calculations are offloaded to a compiled C++ backend, while simulation setup and analysis remain in Python.
