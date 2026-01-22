@@ -6,7 +6,6 @@
 
 **GravityCore** is a hybrid physics simulation engine capable of calculating gravitational interactions for thousands of bodies in real-time. It leverages **Modern C++ (C++17)** for high-performance computing and **Python** for high-level orchestration and visualization.
 
-The project demonstrates the power of **Data-Oriented Design**, achieving a **~30x speedup** over pure Python implementations by optimizing memory access patterns and utilizing hardware parallelism.
 
 ---
 
