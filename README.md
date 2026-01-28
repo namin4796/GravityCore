@@ -44,8 +44,14 @@ I verified the C++ implementation by simulating 500 stars and comparing their ve
 ### Prerequisites
 * **C++ Compiler** (GCC, Clang, or MSVC) supporting C++17
 * **CMake** (Version 3.14+)
-* **Python 3.x**
+* **Python 3.11**
 * **Libraries:** `numpy`, `matplotlib` (for visualization)
+* A `requirements.txt` file is provided for easy installation.
+**Quick Install:**
+Ensure you are in your virtual environment (Python 3.11 recommended), then run:
+
+```bash
+pip install -r requirements.txt
 
 ### Build Instructions
 The project uses **CMake** to automatically fetch dependencies (like `pybind11`) and compile the Python module.
