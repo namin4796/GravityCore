@@ -5,6 +5,8 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
 
 parser = argparse.ArgumentParser(description="Run N-body Simulation")
 parser.add_argument("--N_STARS", type=int, default=1000, help="Number of Stars")
@@ -12,6 +14,7 @@ parser.add_argument("--R_SCALE", type=float, default=100.0, help="NFW Scale Radi
 parser.add_argument("--RHO_0", type=float, default=0.001, help="Dark Matter Density")
 parser.add_argument("--DT", type=float, default=0.01, help="Time step per physics tick")
 parser.add_argument("--STEPS", type=int, default=1, help="Physics steps per render frame")
+parser.add_argument("--DEBUG_TREE", action="store_true", help="Visualize Barnes0-Hut Quadtree")
 args = parser.parse_args()
 
 def get_total_mass(r, m_bh, R_SCALE, RHO_0):
@@ -51,11 +54,11 @@ sim = gravity_core.Universe(N, args.R_SCALE, args.RHO_0, G_GALACTIC, args.DT)
 
 # create a galaxy using polar co-ordinates
 angle = [random.uniform(0, 2*np.pi) for _ in range(N)]
-radius = [random.uniform(1.0, 30.0) for _ in range(N)]
+radius = [random.uniform(1.0, 50.0) for _ in range(N)]
 
 x = [r * np.cos(a) for r, a in zip(radius, angle)]
 y = [r * np.sin(a) for r, a in zip(radius, angle)]
-mass = [random.uniform(5, 20.0) for _ in range(N)]
+mass = [random.uniform(10.0, 50.0) for _ in range(N)]
 
 # add a SMB in the centre
 x[0], y[0] = 0, 0
@@ -75,7 +78,7 @@ for i in range(N):
     v_orbit = np.sqrt(G_GALACTIC * m_Total / r)
 
     # small noise to v
-    v_orbit *= random.uniform(0.99, 1.01)
+    v_orbit *= random.uniform(0.95, 1.05) #slight variation
 
     # perpendicular vel. to radius (tangential vel.)
     vx.append(-v_orbit * np.sin(angle[i]))
@@ -85,15 +88,20 @@ for i in range(N):
 sim.set_state(x, y, vx, vy, mass)
 
 # -- visualization loop --
-fig, ax = plt.subplots(figsize=(8, 8))
+fig, ax = plt.subplots(figsize=(10, 10))
 ax.set_facecolor('black')
-ax.set_xlim(-60, 60)
-ax.set_ylim(-60, 60)
+ax.set_xlim(-80, 80)
+ax.set_ylim(-80, 80)
 
 # scatter plot for stars
-particles = ax.scatter([], [], c='white', s=0.5, alpha=0.8)
+particles = ax.scatter([], [], c='cyan', s=1, alpha=0.8)
 # the SMB
-center = ax.scatter([], [], c='red', s=10)
+center = ax.scatter([], [], c='yellow', s=15, zorder=10)
+
+# collection for tree boxes
+rect_collection = PatchCollection([], edgecolors='green', facecolors='none', alpha=0.2, linewidths=0.5)
+ax.add_collection(rect_collection)
+                                 
 
 def update(frame):
     # run c++ physics
@@ -110,11 +118,24 @@ def update(frame):
     data = np.c_[new_x, new_y]
     particles.set_offsets(data)
     center.set_offsets(np.c_[[new_x[0]], [new_y[0]]])
-    return particles, center
+    
+    # DEBUG: Draw Qaudtree
+    if args.DEBUG_TREE:
+        rect_data = sim.get_tree_rects()
+        patches = []
+        # limit to first 500 boxes to prevent lag if tree is huge
+        limit = min(len(rect_data), 1500)
+        for i in range(0, limit, 3):
+            rx, ry, size = rect_data[i], rect_data[i+1], rect_data[i+2]
+            patches.append(Rectangle((rx, ry), size, size))
+
+        rect_collection.set_paths(patches)
+
+    return particles, center, rect_collection
 
 print("Starting Animation... Close window to exit.")
-ani = FuncAnimation(fig, update, frames=200, interval=20, blit=True)
-plt.title("Galaxy Simulation")
+ani = FuncAnimation(fig, update, frames=200, interval=1, blit=False)
+plt.title(f"Galaxy Simulation (N={N} - Quadtree Viz: {'ON' if args.DEBUG_TREE else 'OFF'}")
 plt.xlabel("R / kpc")
 plt.ylabel("R / kpc")
 plt.show()
