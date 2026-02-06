@@ -30,7 +30,8 @@ DT = args.DT if args.DT else config.get("DT", 0.01)
 R_SCALE = config.get("R_SCALE", 100.0)
 RHO_0 = config.get("RHO_0", 0.001)
 STEPS_PER_FRAME = config.get("STEPS", 1)
-
+THETA = config.get("THETA", 1.0) # vel. multiplier
+MASS_BH = config.get("MASS_BH", 4.0e6)
 
 # load c++ engine
 sys.path.append(os.path.join(os.path.dirname(__file__), '../build'))
@@ -58,7 +59,7 @@ DT_SAFE = 0.000001
 # dark matter density ~ 0.008 M_sun/pc^3 -> convert M_sun/kpc^3
 # 0.008 * 10^9 = 8,000,000 M_sun / kpc^3
 # RHO_0_MW = 8.0e6
-MASS_BH = 4.0e6 # 4 Million Solar masses
+#MASS_BH = 4.0e6 # 4 Million Solar masses
 
 
 # initialize universe
@@ -90,11 +91,16 @@ for i in range(N):
     v_orbit = np.sqrt(G_GALACTIC * m_Total / r)
 
     # small noise to v
-    v_orbit *= random.uniform(0.95, 1.05) #slight variation
+    v_orbit *= THETA #slight variation
+
+    # adding randomness to direction
+    v_radial = 0.0
+    if THETA < 0.5:
+        v_radial = v_orbit*0.5
 
     # perpendicular vel. to radius (tangential vel.)
-    vx.append(-v_orbit * np.sin(angle[i]))
-    vy.append(v_orbit * np.cos(angle[i]))
+    vx.append(-v_orbit * np.sin(angle[i]) + v_radial * np.cos(angle[i]))
+    vy.append(v_orbit * np.cos(angle[i])+ v_radial * np.sin(angle[i]))
 
 # set positions and mass
 sim.set_state(x, y, vx, vy, mass)
