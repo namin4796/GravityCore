@@ -9,7 +9,7 @@
 namespace py = pybind11;
 
 // --- QuadTree Implementation ---
-
+/*
 struct QuadNode {
     double x_min, y_min, size;  // Spatial bounds
     double mass;
@@ -83,8 +83,8 @@ struct QuadNode {
             // Let's use a simpler recursive approach in the Universe class helper.
         }
     }
-};
-
+;
+*/
 // We will use a slightly different approach: The Tree Builder will be a helper class 
 // that has access to the particle arrays.
 
@@ -105,9 +105,14 @@ class BarnesHutTree {
     const std::vector<double>& py;
     const std::vector<double>& pm;
 
+    std::vector<double>& debug_rects;
+
 public:
-    BarnesHutTree(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& m) 
-        : px(x), py(y), pm(m) {
+    BarnesHutTree(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& m,
+            std::vector<double>& rects_out) 
+        : px(x), py(y), pm(m), debug_rects(rects_out) {
+
+        debug_rects.clear(); // Reset for this frame
         
         // 1. Find Bounds
         double min_x = *std::min_element(px.begin(), px.end());
@@ -128,6 +133,24 @@ public:
         // 2. Insert All Particles
         for (size_t i = 0; i < px.size(); ++i) {
             insert(root.get(), i);
+        }
+        // Collect boxes for visualization
+        collect_boxes(root.get());
+    }
+
+    void collect_boxes(Node* node) {
+        if (!node) return;
+
+        // Store format: [x, y, size]
+        // // Only store if it has mass (is active)
+        if (node->mass >0) {
+            debug_rects.push_back(node->x_min);
+            debug_rects.push_back(node->y_min);
+            debug_rects.push_back(node->size);
+
+            if (!node->is_leaf) {
+                for(auto& child : node->children) collect_boxes(child.get());
+            }
         }
     }
 
@@ -234,7 +257,8 @@ class Universe {
     std::vector<double> px, py; 
     std::vector<double> vx, vy; 
     std::vector<double> ax, ay; 
-    std::vector<double> mass; 
+    std::vector<double> mass;
+    std::vector<double> current_rects;
     double dt;
     double R_SCALE, RHO_0, G;
 
@@ -269,7 +293,7 @@ class Universe {
 
            // 2. N-Body Gravity (NOW USING BARNES-HUT)
            // Build the tree
-           BarnesHutTree tree(px, py, mass);
+           BarnesHutTree tree(px, py, mass, current_rects);
 
            // Calculate forces using the tree
            // Note: Tree building is serial, but force calculation can be parallelized easily!
@@ -320,6 +344,7 @@ class Universe {
         std::vector<double> get_y() { return py; }
         std::vector<double> get_vx() { return vx; }
         std::vector<double> get_vy() { return vy; }
+        std::vector<double> get_tree_rects() { return current_rects; }
 
        void step() {
            size_t n = px.size();
@@ -353,5 +378,6 @@ PYBIND11_MODULE(gravity_core, m) {
         .def("get_y", &Universe::get_y)
         .def("get_vx", &Universe::get_vx)
         .def("get_vy", &Universe::get_vy)
+        .def("get_tree_rects", &Universe::get_tree_rects) // EXPOSE IT HERE
         .def("step", &Universe::step);
 }
