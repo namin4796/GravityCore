@@ -1,8 +1,9 @@
 {
-    "N_STARS": 1500,
-    "R_SCALE": 10.0,
-    "RHO_0": 1e3,
-    "DT": 15,
-    "STEPS": 1,
-    "THETA": 0.5
+    "N_STARS": 2000,
+    "R_SCALE": 100.0,
+    "RHO_0": 0.001,
+    "DT": 0.015,
+    "STEPS": 2,
+    "THETA": 0.3,
+    "MASS_BH": 4000000.0
 }
