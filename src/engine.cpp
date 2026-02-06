@@ -342,8 +342,8 @@ class Universe {
 
         std::vector<double> get_x() { return px; }
         std::vector<double> get_y() { return py; }
-//        std::vector<double> get_vx() { return vx; }
-//        std::vector<double> get_vy() { return vy; }
+        std::vector<double> get_vx() { return vx; }
+        std::vector<double> get_vy() { return vy; }
         std::vector<double> get_tree_rects() { return current_rects; }
 
        void step() {
@@ -376,8 +376,8 @@ PYBIND11_MODULE(gravity_core, m) {
         .def("set_state", &Universe::set_state)
         .def("get_x", &Universe::get_x)
         .def("get_y", &Universe::get_y)
-        //.def("get_vx", &Universe::get_vx)
-        //.def("get_vy", &Universe::get_vy)
+        .def("get_vx", &Universe::get_vx)
+        .def("get_vy", &Universe::get_vy)
         .def("get_tree_rects", &Universe::get_tree_rects) // EXPOSE IT HERE
         .def("step", &Universe::step);
 }
