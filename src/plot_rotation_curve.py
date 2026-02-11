@@ -1,8 +1,17 @@
+import argparse
 import sys
 import os
 import random
 import numpy as np
+import matplotlib as mpl
+mpl.rcParams.update(mpl.rcParamsDefault)
 import matplotlib.pyplot as plt
+
+parser = argparse.ArgumentParser(description="Run N-Body Simulation")
+parser.add_argument("--N_STARS", type=int, default=1000, help="Number of Stars")
+parser.add_argument("--R_SCALE", type=float, default=100.0, help="NFW Scale Radius")
+parser.add_argument("--RHO_0", type=float, default=0.001, help="Dark Matter Density")
+args = parser.parse_args()
 
 # 1. SETUP PATHS
 sys.path.append(os.path.join(os.path.dirname(__file__), '../build'))
@@ -17,8 +26,8 @@ except ImportError:
 # 2. HELPER: Theoretical Curves
 def get_nfw_velocity(r, m_bh):
     # Matches C++ Constants
-    R_SCALE = 200.0
-    RHO_0 = 0.002
+    R_SCALE = args.R_SCALE
+    RHO_0 = args.RHO_0
     G = 1.0
     
     # NFW Mass enclosed
@@ -38,8 +47,8 @@ def get_kepler_velocity(r, m_bh):
     return np.sqrt(G * m_bh / r)
 
 # 3. INITIALIZE SIMULATION
-N = 500
-sim = gravity_core.Universe(N)
+N = args.N_STARS
+sim = gravity_core.Universe(N, args.R_SCALE, args.RHO_0)
 mass_bh = 1000.0
 
 # Generate stars (Same logic as visualize.py)
@@ -107,6 +116,9 @@ r_particles = radii[1:]
 
 plt.scatter(r_particles, v_particles, color='blue', alpha=0.6, s=10, label='Simulation Particles')
 
+rs = str(args.R_SCALE)
+rho0 = str(args.RHO_0)
+plt.text(60, 10, r"R_S = "+rs+" rho_0 = "+rho0)
 plt.xlabel('Distance from Center (r)')
 plt.ylabel('Orbital Velocity (v)')
 plt.title('Galaxy Rotation Curve: Evidence of Dark Matter')
