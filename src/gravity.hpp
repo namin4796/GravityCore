@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <cmath>
+#include <random>
 #include <memory>
 #include <algorithm>
 #include <iostream>
@@ -233,6 +234,30 @@ public:
         for (size_t i = 1; i < n; i++) {
             vx[i] += 0.5*ax[i]*dt;
             vy[i] += 0.5*ay[i]*dt;
+        }
+    }
+
+    void init_galaxy(double radius, double central_mass) {
+        std::mt19937 gen(42);
+        std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+        px[0] = 0;
+        py[0] = 0;
+        vx[0] = 0;
+        vy[0] = 0;
+        mass[0] = central_mass;
+
+        for (size_t i = 1; i < px.size(); ++i) {
+            double r = radius * (0.1 + 0.9*std::sqrt(dist(gen)));
+            double theta = dist(gen) * 2.0 * M_PI;
+
+            px[i] = r*std::cos(theta);
+            py[i] = r*std::sin(theta);
+            mass[i] = 1.0 + dist(gen)*2.0;
+
+            double v_mag = std::sqrt(G * central_mass / r);
+            vx[i] = -v_mag * std::sin(theta);
+            vy[i] = v_mag * std::cos(theta);
         }
     }
 };
