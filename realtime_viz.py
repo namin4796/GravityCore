@@ -38,6 +38,10 @@ def main():
 
     clock = pygame.time.Clock()
     running = True
+    show_tree = False
+
+    print("Controls: Press 'T' to toggle Quadtree visualization. Press 'ESC' to quit.")
+
 
     while running:
         # event handler
@@ -47,11 +51,48 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
+                if event.key == pygame.K_t:
+                    show_tree = not show_tree
 
         engine.step()
 
         # opengl rendering
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        # draw quadtree
+        if show_tree:
+            rects = engine.get_tree_rects()
+            if len(rects) > 0:
+                # convert the flat list into struct. Nx3 array
+                rects_np = np.array(rects, dtype=np.float64).reshape(-1, 3)
+
+                x = rects_np[:, 0]
+                y = rects_np[:, 1]
+                s = rects_np[:, 2]
+
+                #vectorized generation of line
+                lines = np.empty((len(rects_np), 8, 2), dtype=np.float64)
+
+                lines[:, 0, 0] = x;     lines[:, 0, 1] = y  # bottom-left to 
+                lines[:, 1, 0] = x + s; lines[:, 1, 1] = y  # bottom-right
+                
+                lines[:, 2, 0] = x + s; lines[:, 2, 1] = y  # bottom-right to
+                lines[:, 3, 0] = x + s; lines[:, 3, 1] = y + s # top-right
+
+                lines[:, 4, 0] = x + s; lines[:, 4, 1] = y + s   # Top-right to
+                lines[:, 5, 0] = x;     lines[:, 5, 1] = y + s   # Top-left
+                
+                lines[:, 6, 0] = x;     lines[:, 6, 1] = y + s   # Top-left to
+                lines[:, 7, 0] = x;     lines[:, 7, 1] = y       # Bottom-left
+
+                lines_gl = np.ascontiguousarray(lines.reshape(-1, 2))
+
+                # draw all line at once
+                glEnableClientState(GL_VERTEX_ARRAY)
+                glVertexPointer(2, GL_DOUBLE, 0, lines_gl)
+                glColor3f(0.15, 0.15, 0.15)
+                glDrawArrays(GL_LINES, 0, len(lines_gl))
+                glDisableClientState(GL_VERTEX_ARRAY)
         # fetch data from C++
         pos = engine.get_positions()
 

@@ -28,5 +28,6 @@ PYBIND11_MODULE(gravity_core, m) {
                     buf(i, 1) = y[i];
                 }
                 return result;
-        });
+        })
+        .def("get_tree_rects", &Universe::get_tree_rects);
 }
