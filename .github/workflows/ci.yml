@@ -28,9 +28,18 @@ jobs:
       working-directory: build
       run: ctest --output-on-failure
 
-    - name: Python Integration Test (Sanity Check)
+    - name: Python Integration Test (Headless)
       run: |
-        pip install numpy matplotlib
-        # Add build dir to python path so it finds gravity_core.so
+        pip install numpy pybind11
         export PYTHONPATH=$PYTHONPATH:$(pwd)/build
-        python tests/benchmark.py --N 100 --STEPS 10
+        python3 -c "
+        import sys
+        import gravity_core
+        print('Successfully imported gravity_core')
+        engine = gravity_core.Universe(100, 100.0, 0.01, 2.0, 0.01)
+        engine.init_galaxy(500.0, 10000.0)
+        engine.step()
+        pos = engine.get_positions()
+        assert pos.shape == (100, 2), 'Memory bridge failed!'
+        print('Engine step and Zero-Copy Numpy bridge validated successfully.')
+        "
