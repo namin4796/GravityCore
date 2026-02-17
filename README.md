@@ -35,3 +35,35 @@ $$M(\lt r) = 4 \pi \rho_0 R_s^3 \left[ \ln\left(1 + \frac{r}{R_s}\right) - \frac
 python3 -m venv venv
 source venv/bin/activate
 pip install pygame PyOpenGL PyOpenGL_accelerate numpy pybind11
+
+### 2. Compile the Engine
+
+For Linux/Standard Environments (via CMake):
+```bash
+mkdir build && cd build
+cmake -DOpenMP_ROOT=$(brew --prefix libomp) ..
+cmake --build .
+
+For macOS / Apple Silicon (via Manual Script):
+Due to Apple Clang and Homebrew ABI constraints, a dedicated build script is provided to ensure dynamic lookup and OpenMP linking.
+
+```bash
+chmod +x compile_manual.sh
+./compile_manual.sh
+
+**Running the Simulation**
+
+The engine is controlled via JSON configuration files, allowing rapid iteration of galactic parameters without recompiling.
+
+```bash
+python3 realtime_viz.py default_config.json
+
+Interactive Controls
+
+-- Left Click & Drag: Pan the camera
+
+-- Scroll Wheel: Zoom in/out
+
+-- 'T' Key: Toggle real-time Barnes-Hut Quadtree visualization grid
+
+-- 'ESC': Exit simulation
