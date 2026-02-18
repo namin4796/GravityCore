@@ -177,7 +177,8 @@ def main():
 
         glPointSize(2.0)
 
-        glDrawArrays(GL_POINTS, 0, num_stars)
+        current_num_stars = len(pos_gl) # dynamically checking array size
+        glDrawArrays(GL_POINTS, 0, current_num_stars)
 
         glDisableClientState(GL_COLOR_ARRAY)
         glDisableClientState(GL_VERTEX_ARRAY)

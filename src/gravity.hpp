@@ -235,6 +235,9 @@ public:
             vx[i] += 0.5*ax[i]*dt;
             vy[i] += 0.5*ay[i]*dt;
         }
+
+        //to account for absorption of the stars by BH
+        handle_collisions();
     }
 
     void init_galaxy(double radius, double central_mass) {
@@ -260,4 +263,49 @@ public:
             vy[i] = v_mag * std::cos(theta);
         }
     }
+
+    void handle_collisions() {
+        double eh_radius = 5.0; // Event Horizon of the central BH
+        
+        for (size_t i = 1; i < px.size(); ) {
+            double dx = px[i] - px[0];
+            double dy = py[i] - py[0];
+            double dist_sq = dx*dx + dy*dy;
+
+            if (dist_sq < (eh_radius * eh_radius)) {
+                // if star comes close to the BH, its mass increases
+                // and acquires velocity for conserving momentum :
+                // v_new = (m1*v1 + m2*v2) / (m1 + m2)
+                double new_mass = mass[0] + mass[i];
+                vx[0] = (mass[0]*vx[0] + mass[i]*vx[i]) / new_mass;
+                vy[0] = (mass[0]*vy[0] + mass[i]*vy[i]) / new_mass;
+                mass[0] = new_mass;
+
+                // delete the star that is absorbed by the BH
+                size_t last = px.size() - 1;
+                if (i != last) {
+                    px[i] = px[last];
+                    py[i] = py[last];
+                    vx[i] = vx[last];
+                    vy[i] = vy[last];
+                    ax[i] = ax[last];
+                    ay[i] = ay[last];
+                    mass[i] = mass[last];
+                }
+
+                //remoe the last element to avoid duplication
+                px.pop_back();
+                py.pop_back();
+                vx.pop_back();
+                vy.pop_back();
+                ax.pop_back();
+                ay.pop_back();
+                mass.pop_back();
+
+            }
+            else {
+                i++;
+            }
+        }
+    }                                     
 };
