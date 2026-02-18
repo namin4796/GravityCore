@@ -307,5 +307,11 @@ public:
                 i++;
             }
         }
-    }                                     
+    }
+
+    double get_bh_mass() {
+        if (mass.empty())
+            return 0.0;
+        return mass[0];
+    }
 };

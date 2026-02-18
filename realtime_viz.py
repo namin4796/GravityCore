@@ -36,7 +36,7 @@ def main():
     print(f"Loading parameters from {config_file}...")
     config = load_config(config_file)
 
-    num_stars = config.get("NUM_STARS", 5000)
+    num_stars = config.get("N_STARS", 5000)
     dt = config.get("DT", 0.01)
     r_scale = config.get("R_SCALE", 100.0)
     rho_0 = config.get("RHO_0", 0.01)
@@ -48,6 +48,8 @@ def main():
 
     #initialize engine
     pygame.init()
+    pygame.font.init()
+    ui_font = pygame.font.SysFont('Consolas', 18, bold=True)
     WIDTH, HEIGHT = 1200, 1000
     pygame.display.set_caption(f"GravityCore: {config_file}")
     pygame.display.set_mode((WIDTH, HEIGHT), DOUBLEBUF | OPENGL)
@@ -88,6 +90,40 @@ def main():
 
     print("Controls: Press 'T' to toggle Quadtree visualization. Press 'ESC' to quit.")
 
+    def draw_text_overlay(text, x, y):
+        """Renders 2D text over a 3D OpenGL scene using PyGame and glDrawPixels"""
+        # render text to a pygame surface
+        text_surface = ui_font.render(text, True, (255, 255, 255, 255))
+        #convert surface to raw RGBA pixel data
+        text_data = pygame.image.tostring(text_surface, "RGBA", True)
+
+        # save 3D camera matrices
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+        gluOrtho2D(0, WIDTH, 0, HEIGHT) # switching to 2D
+
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
+    
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glColor3f(1.0, 1.0, 1.0) # forcing text color to pure white
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+
+        # draw the text pixels
+        glRasterPos2i(x, y)
+        glDrawPixels(text_surface.get_width(), text_surface.get_height(), GL_RGBA, GL_UNSIGNED_BYTE, text_data)
+
+        glPopAttrib()
+    
+        # restore 3D camera matrices
+        glPopMatrix()
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
 
     while running:
         # event handler
@@ -182,6 +218,19 @@ def main():
 
         glDisableClientState(GL_COLOR_ARRAY)
         glDisableClientState(GL_VERTEX_ARRAY)
+
+        current_stars = len(pos_gl)
+        bh_mass = engine.get_bh_mass()
+        fps = clock.get_fps()
+
+        # construct UI string
+        hud_text = f"FPS: {fps:.1f} | Stars: {current_stars} | BH Mass: {bh_mass:.0f}"
+
+        # draw text in top-left corner
+        draw_text_overlay(hud_text, 10, HEIGHT - 30)
+
+        if show_tree:
+            draw_text_overlay(f"Quadtree Nodes: {len(rects)//3}", 10, HEIGHT - 55)
 
         pygame.display.flip()
         clock.tick(60) # 60 FPS
