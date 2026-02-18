@@ -29,5 +29,6 @@ PYBIND11_MODULE(gravity_core, m) {
                 }
                 return result;
         })
-        .def("get_tree_rects", &Universe::get_tree_rects);
+        .def("get_tree_rects", &Universe::get_tree_rects)
+        .def("get_bh_mass", &Universe::get_bh_mass);
 }
